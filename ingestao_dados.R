@@ -79,3 +79,28 @@ raster_1_r <- rotate(raster_1[[1:2]])
 ######> Plotando com terra
 terra::plot(raster_1[[20]], main="Unrotated Specific cloud ice water content") 
 terra::plot(raster_1_r[[20]], main="Rotated Specific cloud ice water content")
+
+# ------------------------------------------------------------
+##################> PROCESSANDO OS DADOS EM VALORES BRUTOS
+# ------------------------------------------------------------
+
+pressure_levels <- c(
+  "1", "2", "3",
+  "5", "7", "10",
+  "20", "30", "50",
+  "70", "100", "125",
+  "150", "175", "200",
+  "225", "250", "300",
+  "350", "400", "450",
+  "500", "550", "600",
+  "650", "700", "750",
+  "775", "800", "825",
+  "850", "875", "900",
+  "925", "950", "975",
+  "1000"
+)
+
+for (pressure_level in rev(pressure_levels)){
+  raster_layer_name <- paste0("ciwc_valid_time=1349049600_pressure_level=", pressure_level)
+  raster_layer <- raster_1[[raster_layer_name]]
+}
