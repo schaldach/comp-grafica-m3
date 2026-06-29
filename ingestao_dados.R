@@ -44,7 +44,7 @@ if(!require(pacman)) {
 }
 library(pacman)
 ######> Instalando pacotes
-p_load(terra, leaflet, leafem, htmltools, ggplot2)
+p_load(terra, leaflet, leafem, htmltools, ggplot2, sf, rnaturalearth, rnaturalearthdata)
 
 ######> Definindo área de estudo
 lat_min <- -28
@@ -74,7 +74,7 @@ print(crs(raster_1))  # sistema de referência de coordenadas
 print(varnames(raster_1)) # nome das variáveis
 print(longnames(raster_1)) # nome longo das variáveis
 
-raster_1_r <- rotate(raster_1[[1:2]])
+raster_1_r <- rotate(raster_1)
 
 ######> Plotando com terra
 terra::plot(raster_1[[20]], main="Unrotated Specific cloud ice water content") 
@@ -99,8 +99,48 @@ pressure_levels <- c(
   "925", "950", "975",
   "1000"
 )
+dim(raster_1_r)
 
+# área em volta de santa catarina
+new_ext <- ext(c(-55, -45, -30, -20))
+world <- ne_countries(scale = "medium", type="countries", returnclass = "sf")
+ggplot() +
+  geom_sf(data = world) +
+  coord_sf(xlim = c(as.vector(new_ext[1:2])), ylim = c(as.vector(new_ext[3:4])))
+
+output_file <- "cloud_ice_data.bin"
+con <- file(output_file, "wb")
+
+grid_width <- 0
+grid_height <- 0
+layer_count <- length(pressure_levels)
+
+# a pressão não é linearmente proporcional à altitude, mas vou tratar como se sim
+# é mais fácil. uma melhoria poderia ser fazer cientificamente verídico
 for (pressure_level in rev(pressure_levels)){
   raster_layer_name <- paste0("ciwc_valid_time=1349049600_pressure_level=", pressure_level)
-  raster_layer <- raster_1[[raster_layer_name]]
+  raster_layer <- raster_1_r[[raster_layer_name]]
+
+  raster_layer_crop <- mask(raster_layer, new_ext)
+  raster_layer_crop <- trim(raster_layer_crop)  
+
+  layer_values <- as.vector(values(raster_layer_crop))
+  
+  # substituir NAs por 0
+  layer_values[is.na(layer_values)] <- 0.0
+  
+  # Save the grid dimensions on the first pass so you know the exact texture size
+  if (grid_width == 0) {
+    grid_width <- ncol(raster_layer_crop)
+    grid_height <- nrow(raster_layer_crop)
+  }
+  
+  # escrever o vetor como numeros float de 32 bits
+  writeBin(as.numeric(layer_values), con, size = 4, endian = "little")
 }
+terra::plot(raster_layer_crop)
+
+close(con)
+
+cat(sprintf("Exportado grid 3D com dimensões:\nLargura (Lon): %d\nAltura (Lat): %d\nProfundidade (Camadas de pressão): %d\n", 
+            grid_width, grid_height, layer_count))
