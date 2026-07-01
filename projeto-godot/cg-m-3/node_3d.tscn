@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://d3k2j5bsddecf"]
+
+[ext_resource type="Script" uid="uid://bb27js5xdmswk" path="res://node_3d.gd" id="1_a202f"]
+[ext_resource type="Shader" uid="uid://d28vkx22sfham" path="res://node_3d.gdshader" id="2_noarx"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_a0tk4"]
+render_priority = 0
+shader = ExtResource("2_noarx")
+shader_parameter/threshold = 0.1
+shader_parameter/transparency_scale = 1.0
+shader_parameter/max_steps = 64
+
+[sub_resource type="BoxMesh" id="BoxMesh_r3fl7"]
+material = SubResource("ShaderMaterial_a0tk4")
+
+[node name="Node3D" type="Node3D" unique_id=210990257]
+script = ExtResource("1_a202f")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1793306590]
+mesh = SubResource("BoxMesh_r3fl7")

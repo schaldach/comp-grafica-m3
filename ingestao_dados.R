@@ -115,6 +115,20 @@ grid_width <- 0
 grid_height <- 0
 layer_count <- length(pressure_levels)
 
+max_value <- 0
+# descobrindo o valor máximo para normalizar
+for (pressure_level in rev(pressure_levels)){
+  raster_layer_name <- paste0("ciwc_valid_time=1349049600_pressure_level=", pressure_level)
+  raster_layer <- raster_1_r[[raster_layer_name]]
+
+  raster_layer_crop <- mask(raster_layer, new_ext)
+  raster_layer_crop <- trim(raster_layer_crop)  
+
+  layer_values <- as.vector(values(raster_layer_crop))
+
+  if(max(layer_values) > max_value) max_value <- max(layer_values)
+}
+
 # a pressão não é linearmente proporcional à altitude, mas vou tratar como se sim
 # é mais fácil. uma melhoria poderia ser fazer cientificamente verídico
 for (pressure_level in rev(pressure_levels)){
@@ -125,6 +139,7 @@ for (pressure_level in rev(pressure_levels)){
   raster_layer_crop <- trim(raster_layer_crop)  
 
   layer_values <- as.vector(values(raster_layer_crop))
+  layer_values <- layer_values / max_value # normalizando para valores entre 0 e 1 (a maioria são números pequenos)
   
   # substituir NAs por 0
   layer_values[is.na(layer_values)] <- 0.0
@@ -142,5 +157,4 @@ terra::plot(raster_layer_crop)
 
 close(con)
 
-cat(sprintf("Exportado grid 3D com dimensões:\nLargura (Lon): %d\nAltura (Lat): %d\nProfundidade (Camadas de pressão): %d\n", 
-            grid_width, grid_height, layer_count))
+cat(sprintf("Exportado grid 3D com dimensões:\nLargura (Lon): %d\nAltura (Lat): %d\nProfundidade (Camadas de pressão): %d\n", grid_width, grid_height, layer_count))
